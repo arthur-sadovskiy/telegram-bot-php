@@ -3,8 +3,11 @@
 include('../vendor/autoload.php');
 use Telegram\Bot\Api;
 
-$config = parse_ini_file('app_config.ini');
-$token = getenv('TOKEN') ?: $config['token'];
+$token = getenv('TOKEN');
+if (!$token) {
+    $config = parse_ini_file('app_config.ini');
+    $token = $config['token'];
+}
 
 $telegram = new Api($token);
 $result = $telegram->getWebhookUpdates();
