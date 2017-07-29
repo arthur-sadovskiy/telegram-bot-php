@@ -16,7 +16,7 @@ $providedText = $result['message']['text'];
 $chatId = $result['message']['chat']['id'];
 $keyboard = [['Weather: Kyiv']];
 
-if (!$providedText) {
+if (!$providedText || $providedText === '/start') {
     $replyText = 'Make your choice';
     $replyMarkup = $telegram->replyKeyboardMarkup(
         ['keyboard' => $keyboard, 'resize_keyboard' => true, 'one_time_keyboard' => false]
