@@ -46,12 +46,30 @@ class WeatherClient
 
     private function prepareData(array $weatherData)
     {
-        $processedData['cityName'] = $weatherData['city']['name'];
-        $processedData['cityCountry'] = $weatherData['city']['country'];
+        $processedData = "Weather details in {$weatherData['city']['name']}, "
+            . $weatherData['city']['country']
+            . PHP_EOL . PHP_EOL;
 
-        $processedData['details'] = array_slice($weatherData['list'], 0, 9);
+        $weatherData = array_slice($weatherData['list'], 0, 9);
+        foreach ($weatherData as $key => $data) {
+            $dayCurrent = date('l, F j', strtotime($data['dt_txt']));
+            $isNextDay = true;
+            if ($key > 0) {
+                $dayPrevious = date('l, F j', strtotime($weatherData[$key - 1]['dt_txt']));
+                $isNextDay = $dayCurrent !== $dayPrevious;
+            }
+            $processedData .= ($isNextDay && ($key > 0)) ? PHP_EOL : '';
+            $processedData .= ($isNextDay)
+                ? $dayCurrent . PHP_EOL
+                : '';
+            $processedData .= date('H:i', strtotime($data['dt_txt'])) . ' - ';
+            $processedData .= round($data['main']['temp']) . '°C, ';
+            $processedData .= $data['weather'][0]['description'] . ', ';
+            $processedData .= 'wind ' . round(($data['wind']['speed'] * 18) / 5) . ' km/h';
+            $processedData .= PHP_EOL;
+        }
 
-        return json_encode($processedData);
+        return $processedData;
     }
 
     private function prepareUrl()
