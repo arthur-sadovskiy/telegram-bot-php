@@ -3,6 +3,7 @@
 namespace WeatherBot\Helper;
 
 use GuzzleHttp\Client;
+use WeatherBot\Emoji;
 
 class WeatherClient
 {
@@ -35,10 +36,10 @@ class WeatherClient
 
     public function fetch()
     {
-        $url = $this->prepareUrl();
+        $urlParams = $this->prepareUrlParams();
 
         $client = new Client();
-        $response = $client->get(self::API_URL . $url);
+        $response = $client->get(self::API_URL . '?' . $urlParams);
         $weatherData = json_decode($response->getBody(), true);
 
         return $this->prepareData($weatherData);
@@ -51,6 +52,7 @@ class WeatherClient
             . PHP_EOL . PHP_EOL;
 
         $weatherData = array_slice($weatherData['list'], 0, 9);
+        $emoji = new Emoji();
         foreach ($weatherData as $key => $data) {
             $dayCurrent = date('l, F j', strtotime($data['dt_txt']));
             $isNextDay = true;
@@ -64,7 +66,10 @@ class WeatherClient
                 : '';
             $processedData .= date('H:i', strtotime($data['dt_txt'])) . ' - ';
             $processedData .= round($data['main']['temp']) . '°C, ';
-            $processedData .= $data['weather'][0]['description'] . ', ';
+            $weatherEmoji = $emoji->render($data['weather'][0]['description']);
+            $processedData .= !empty($weatherEmoji)
+                ? $weatherEmoji . ', '
+                : $data['weather'][0]['description'] . ', ';
             $processedData .= 'wind ' . round(($data['wind']['speed'] * 18) / 5) . ' km/h';
             $processedData .= PHP_EOL;
         }
@@ -72,20 +77,8 @@ class WeatherClient
         return $processedData;
     }
 
-    private function prepareUrl()
+    private function prepareUrlParams()
     {
-        $url = '';
-        $delimiter = '?';
-
-        foreach ($this->params as $key => $param) {
-            $url .= $delimiter;
-            if ($delimiter === '?') {
-              $delimiter = '&';
-            }
-
-            $url .= "{$key}={$param}";
-        }
-
-        return $url;
+        return http_build_query($this->params);
     }
 }
