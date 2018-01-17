@@ -5,6 +5,7 @@ require_once 'bootstrap.php';
 
 use Telegram\Bot\Api;
 use WeatherBot\Helper\WeatherClient;
+use Telegram\Bot\Keyboard\Keyboard;
 
 $config = parse_ini_file('app_config.ini');
 
@@ -19,17 +20,17 @@ if (!$weatherApiToken) {
 }
 
 $telegram = new Api($token);
-$result = $telegram->getWebhookUpdates();
+$result = $telegram->getWebhookUpdate();
 //$result = $telegram->getUpdates(['offset' => 719560554]);
 //$result = $telegram->getUpdates(); // TODO
 //$result = $result[0]; // TODO
 $providedText = $result['message']['text'];
 $chatId = $result['message']['chat']['id'];
-$keyboard = [['Weather: Kyiv'], ['Weather: Kharkiv']];
+$keyboard = [['Kyiv'], ['Kharkiv']];
 
 if (!$providedText || $providedText === '/start') {
-    $replyText = 'Make your choice';
-    $replyMarkup = $telegram->replyKeyboardMarkup(
+    $replyText = 'Choose your city';
+    $replyMarkup = Keyboard::make(
         ['keyboard' => $keyboard, 'resize_keyboard' => true, 'one_time_keyboard' => false]
     );
 
@@ -37,7 +38,7 @@ if (!$providedText || $providedText === '/start') {
         ['chat_id' => $chatId, 'text' => $replyText, 'reply_markup' => $replyMarkup]
     );
 
-} elseif ($providedText === 'Weather: Kyiv') {
+} elseif ($providedText === 'Kyiv') {
     $params = [
         WeatherClient::CITY_KEY => WeatherClient::CITY_KYIV,
         WeatherClient::APPID_KEY => $weatherApiToken
@@ -48,7 +49,7 @@ if (!$providedText || $providedText === '/start') {
     $telegram->sendMessage(
         ['chat_id' => $chatId, 'text' => $replyText]
     );
-} elseif ($providedText === 'Weather: Kharkiv') {
+} elseif ($providedText === 'Kharkiv') {
     $params = [
         WeatherClient::CITY_KEY => WeatherClient::CITY_KHARKIV,
         WeatherClient::APPID_KEY => $weatherApiToken
