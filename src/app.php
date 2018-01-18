@@ -5,6 +5,7 @@ require_once 'bootstrap.php';
 
 use Telegram\Bot\Api;
 use WeatherBot\Helper\WeatherClient;
+use Telegram\Bot\Keyboard\Keyboard;
 
 $config = parse_ini_file('app_config.ini');
 
@@ -19,42 +20,37 @@ if (!$weatherApiToken) {
 }
 
 $telegram = new Api($token);
-$result = $telegram->getWebhookUpdates();
+$result = $telegram->getWebhookUpdate();
 //$result = $telegram->getUpdates(['offset' => 719560554]);
 //$result = $telegram->getUpdates(); // TODO
 //$result = $result[0]; // TODO
-$providedText = $result['message']['text'];
-$chatId = $result['message']['chat']['id'];
-$keyboard = [['Weather: Kyiv'], ['Weather: Kharkiv']];
+$inlineKeyboard = Keyboard::make()->inline()->row(
+    Keyboard::inlineButton(['text' => 'Kyiv', 'callback_data' => WeatherClient::CITY_KYIV]),
+    Keyboard::inlineButton(['text' => 'Kharkiv', 'callback_data' => WeatherClient::CITY_KHARKIV])
+);
 
-if (!$providedText || $providedText === '/start') {
-    $replyText = 'Make your choice';
-    $replyMarkup = $telegram->replyKeyboardMarkup(
-        ['keyboard' => $keyboard, 'resize_keyboard' => true, 'one_time_keyboard' => false]
-    );
+if (isset($result['message'])) {
+    $providedText = $result['message']['text'];
+    if (!$providedText || $providedText === '/start') {
+        $chatId = $result['message']['chat']['id'];
+        $replyText = 'Choose your city';
 
-    $telegram->sendMessage(
-        ['chat_id' => $chatId, 'text' => $replyText, 'reply_markup' => $replyMarkup]
-    );
+        $telegram->sendMessage(
+            ['chat_id' => $chatId, 'text' => $replyText, 'reply_markup' => $inlineKeyboard]
+        );
+    }
+} elseif ($result->isType('callback_query')) {
+    $callbackQuery = $result->getCallbackQuery();
+    $callbackData = $callbackQuery->getData();
+    $chatId = $callbackQuery->getFrom()->getId();
 
-} elseif ($providedText === 'Weather: Kyiv') {
     $params = [
-        WeatherClient::CITY_KEY => WeatherClient::CITY_KYIV,
+        WeatherClient::CITY_KEY => $callbackData,
         WeatherClient::APPID_KEY => $weatherApiToken
     ];
 
     $replyText = (new WeatherClient($params))->fetch();
-
-    $telegram->sendMessage(
-        ['chat_id' => $chatId, 'text' => $replyText]
-    );
-} elseif ($providedText === 'Weather: Kharkiv') {
-    $params = [
-        WeatherClient::CITY_KEY => WeatherClient::CITY_KHARKIV,
-        WeatherClient::APPID_KEY => $weatherApiToken
-    ];
-
-    $replyText = (new WeatherClient($params))->fetch();
+    $replyText .= PHP_EOL . PHP_EOL . 'To see menu again, type "/start"';
 
     $telegram->sendMessage(
         ['chat_id' => $chatId, 'text' => $replyText]
