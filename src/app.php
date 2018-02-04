@@ -6,6 +6,7 @@ require_once 'bootstrap.php';
 use Telegram\Bot\Api;
 use WeatherBot\Helper\WeatherClient;
 use Telegram\Bot\Keyboard\Keyboard;
+use WeatherBot\Elastic\Searcher;
 
 $config = parse_ini_file('app_config.ini');
 
@@ -20,23 +21,65 @@ if (!$weatherApiToken) {
 }
 
 $telegram = new Api($token);
-$result = $telegram->getWebhookUpdate();
+//$result = $telegram->getWebhookUpdate();
 //$result = $telegram->getUpdates(['offset' => 719560554]);
-//$result = $telegram->getUpdates(); // TODO
+$result = $telegram->getUpdates(); // TODO
 //$result = $result[0]; // TODO
-$inlineKeyboard = Keyboard::make()->inline()->row(
-    Keyboard::inlineButton(['text' => 'Kyiv', 'callback_data' => WeatherClient::CITY_KYIV]),
-    Keyboard::inlineButton(['text' => 'Kharkiv', 'callback_data' => WeatherClient::CITY_KHARKIV])
-);
+$result = $result[count($result) - 1]; // TODO
 
 if (isset($result['message'])) {
     $providedText = $result['message']['text'];
+    $chatId = $result['message']['chat']['id'];
     if (!$providedText || $providedText === '/start') {
-        $chatId = $result['message']['chat']['id'];
-        $replyText = 'Choose your city';
+        $replyText = 'Provide city name, for which you would like to get weather forecast.';
 
         $telegram->sendMessage(
-            ['chat_id' => $chatId, 'text' => $replyText, 'reply_markup' => $inlineKeyboard]
+            ['chat_id' => $chatId, 'text' => $replyText]
+        );
+    } elseif (is_string($providedText)) {
+        $foundData = (new Searcher())->searchByName($providedText);
+
+        if (count($foundData) === 1) {
+            $params = [
+                WeatherClient::CITY_KEY => $foundData[0]['id'],
+                WeatherClient::APPID_KEY => $weatherApiToken
+            ];
+
+            $replyText = (new WeatherClient($params))->fetch();
+
+            $telegram->sendMessage(
+                ['chat_id' => $chatId, 'text' => $replyText]
+            );
+        } elseif (count($foundData) > 1) {
+            $buttons = [];
+            // TODO need to set 2-3 buttons per row..
+            $inlineKeyboard = Keyboard::make()->inline();
+            foreach ($foundData as $city) {
+                $buttons[] = Keyboard::inlineButton([
+                    'text' => "{$city['name']} ({$city['country']})",
+                    'callback_data' => $city['id']
+                ]);
+                //$buttons[] = [$city['name'] . ', ' . $city['country']];
+                if (count($buttons) === 2) {
+                    $inlineKeyboard = call_user_func_array([$inlineKeyboard, 'row'], $buttons);
+                    $buttons = [];
+                }
+            }
+
+            $replyText = "We didn't find your city, but there are some very similar:";
+            $telegram->sendMessage(
+                ['chat_id' => $chatId, 'text' => $replyText, 'reply_markup' => $inlineKeyboard]
+            );
+        } else {
+            $replyText = "We couldn't find your city :(";
+            $telegram->sendMessage(
+                ['chat_id' => $chatId, 'text' => $replyText]
+            );
+        }
+    } else {
+        $replyText = 'Some error happened :(';
+        $telegram->sendMessage(
+            ['chat_id' => $chatId, 'text' => $replyText]
         );
     }
 } elseif ($result->isType('callback_query')) {
