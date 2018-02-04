@@ -8,7 +8,9 @@ use WeatherBot\Helper\WeatherClient;
 use Telegram\Bot\Keyboard\Keyboard;
 use WeatherBot\Elastic\Searcher;
 
-$config = parse_ini_file('app_config.ini');
+$config = file_exists('app_config.ini')
+    ? parse_ini_file('app_config.ini')
+    : [];
 
 $token = getenv('TOKEN');
 if (!$token) {
@@ -84,6 +86,7 @@ if (isset($result['message'])) {
     }
 } elseif ($result->isType('callback_query')) {
     $callbackQuery = $result->getCallbackQuery();
+    $callbackQueryId = $callbackQuery->getId();
     $callbackData = $callbackQuery->getData();
     $chatId = $callbackQuery->getFrom()->getId();
 
@@ -97,5 +100,9 @@ if (isset($result['message'])) {
 
     $telegram->sendMessage(
         ['chat_id' => $chatId, 'text' => $replyText]
+    );
+
+    $telegram->answerCallbackQuery(
+        ['callback_query_id' => $callbackQueryId]
     );
 }
