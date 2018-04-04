@@ -23,11 +23,11 @@ if (!$weatherApiToken) {
 }
 
 $telegram = new Api($token);
-//$result = $telegram->getWebhookUpdate();
+$result = $telegram->getWebhookUpdate();
 //$result = $telegram->getUpdates(['offset' => 719560554]);
-$result = $telegram->getUpdates(); // TODO
+//$result = $telegram->getUpdates(); // TODO
 //$result = $result[0]; // TODO
-$result = $result[count($result) - 1]; // TODO
+//$result = $result[count($result) - 1]; // TODO
 
 if (isset($result['message'])) {
     $providedText = $result['message']['text'];
@@ -48,6 +48,7 @@ if (isset($result['message'])) {
             ];
 
             $replyText = (new WeatherClient($params))->fetch();
+            $replyText .= PHP_EOL . PHP_EOL . 'To see menu again, type "/start"';
 
             $telegram->sendMessage(
                 ['chat_id' => $chatId, 'text' => $replyText]
