@@ -4,7 +4,7 @@ namespace WeatherBot;
 
 class Emoji
 {
-    const WEATHER_EMOJI = [
+    private const WEATHER_EMOJI = [
         'clear sky' => "\u{2600}",
         'clear sky night' => "\u{1F319}", // Crescent Moon or '1F311' for Moon
         'scattered clouds' => "\u{2601}", // one cloud
@@ -17,15 +17,15 @@ class Emoji
         'snow' => "\u{2744}",
     ];
 
-    public function render(string $weatherDescription)
+    /**
+     * @param string $weatherDescription
+     * @return string
+     */
+    public function render(string $weatherDescription): string
     {
         // echo json_decode('"\uD83D\uDE00"');
         // echo "\u{1F30F}";
 
-        $weatherEmoji = isset(self::WEATHER_EMOJI[$weatherDescription])
-            ? self::WEATHER_EMOJI[$weatherDescription]
-            : '';
-
-        return $weatherEmoji;
+        return self::WEATHER_EMOJI[$weatherDescription] ?? '';
     }
 }
