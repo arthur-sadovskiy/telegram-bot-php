@@ -7,22 +7,24 @@ use WeatherBot\Emoji;
 
 class WeatherClient
 {
-    const API_URL = 'http://api.openweathermap.org/data/2.5/forecast';
+    public const APPID_KEY = 'appid';
+    public const CITY_KEY = 'id';
+    public const CITY_KYIV = 703448;
+    public const CITY_KHARKIV = 706483;
 
-    const CITY_KEY = 'id';
-    const CITY_KYIV = 703448;
-    const CITY_KHARKIV = 706483;
-
-    const TEMPERATURE_UNITS_FORMAT_KEY = 'units';
-    const TEMPERATURE_CELSIUS = 'metric';
-
-    const APPID_KEY = 'appid';
+    private const API_URL = 'http://api.openweathermap.org/data/2.5/forecast';
+    private const TEMPERATURE_UNITS_FORMAT_KEY = 'units';
+    private const TEMPERATURE_CELSIUS = 'metric';
 
     /**
      * @var array
      */
     private $params = [];
 
+    /**
+     * WeatherClient constructor.
+     * @param array $params
+     */
     public function __construct(array $params)
     {
         if (!isset($params[self::TEMPERATURE_UNITS_FORMAT_KEY])) {
@@ -30,11 +32,12 @@ class WeatherClient
         }
 
         $this->params = $params;
-
-        return $this;
     }
 
-    public function fetch()
+    /**
+     * @return string
+     */
+    public function fetch(): string
     {
         $urlParams = $this->prepareUrlParams();
 
@@ -45,13 +48,17 @@ class WeatherClient
         return $this->prepareData($weatherData);
     }
 
-    private function prepareData(array $weatherData)
+    /**
+     * @param array $weatherData
+     * @return string
+     */
+    private function prepareData(array $weatherData): string
     {
         $processedData = "Weather details in {$weatherData['city']['name']}, "
             . $weatherData['city']['country']
             . PHP_EOL . PHP_EOL;
 
-        $weatherData = array_slice($weatherData['list'], 0, 9);
+        $weatherData = \array_slice($weatherData['list'], 0, 9);
         $emoji = new Emoji();
         foreach ($weatherData as $key => $data) {
             $dayCurrent = date('l, F j', strtotime($data['dt_txt']));
@@ -61,9 +68,7 @@ class WeatherClient
                 $isNextDay = $dayCurrent !== $dayPrevious;
             }
             $processedData .= ($isNextDay && ($key > 0)) ? PHP_EOL : '';
-            $processedData .= ($isNextDay)
-                ? $dayCurrent . PHP_EOL
-                : '';
+            $processedData .= $isNextDay ? $dayCurrent . PHP_EOL : '';
             $processedData .= date('H:i', strtotime($data['dt_txt'])) . ' - ';
             $processedData .= round($data['main']['temp']) . '°C, ';
             $weatherEmoji = $emoji->render($data['weather'][0]['description']);
@@ -77,7 +82,10 @@ class WeatherClient
         return $processedData;
     }
 
-    private function prepareUrlParams()
+    /**
+     * @return string
+     */
+    private function prepareUrlParams(): string
     {
         return http_build_query($this->params);
     }
