@@ -5,20 +5,19 @@
 require_once '../vendor/autoload.php';
 require_once 'bootstrap.php';
 
-$citiesListRaw = file_get_contents('../city.list.json');
-$citiesList = json_decode($citiesListRaw, true);
-if (empty($citiesList)) {
-    exit('There are no cities!');
-}
+echo 'Starting..' . PHP_EOL;
 
-$elasticaClient = new \Elastica\Client([
-    'host' => '172.17.0.2',
+$defaultParams = [
+    'host' => '127.0.0.1',
     'port' => 9200
-]);
+];
+
+$elasticaClient = new \Elastica\Client($defaultParams);
 
 $index = $elasticaClient->getIndex('telegram-bot');
 if (!$index->exists()) {
     $index->create();
+    echo 'Created index..' . PHP_EOL;
 }
 //$index->delete(); exit;
 
@@ -38,10 +37,23 @@ $mapping->setProperties([
     ]
 ]);
 $mapping->send();
+echo 'Set mapping..' . PHP_EOL;
 
-$documents = [];
-foreach ($citiesList as $city) {
-    $documents[] = new \Elastica\Document($city['id'], $city);
+for ($i = 0; $i < 21; $i++) {
+    $citiesListRaw = file_get_contents("../cities_list_{$i}.json");
+    $citiesList = json_decode($citiesListRaw, true);
+    unset($citiesListRaw);
+    if (empty($citiesList)) {
+        exit('There are no cities!');
+    }
+
+    $documents = [];
+    foreach ($citiesList as $city) {
+        $documents[] = new \Elastica\Document($city['id'], $city);
+    }
+
+    $type->addDocuments($documents);
+
+    unset($citiesList);
+    echo 'Done file #' . $i . PHP_EOL;
 }
-
-$type->addDocuments($documents);
