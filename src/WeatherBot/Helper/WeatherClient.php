@@ -69,12 +69,12 @@ class WeatherClient
             }
             $processedData .= ($isNextDay && ($key > 0)) ? PHP_EOL : '';
             $processedData .= $isNextDay ? $dayCurrent . PHP_EOL : '';
-            $processedData .= date('H:i', strtotime($data['dt_txt'])) . ' - ';
-            $processedData .= round($data['main']['temp']) . '°C, ';
+            $processedData .= date('H:i', strtotime($data['dt_txt'])) . '  ';
+            $processedData .= round($data['main']['temp']) . '°C  ';
             $weatherEmoji = $emoji->render($data['weather'][0]['description']);
             $processedData .= !empty($weatherEmoji)
-                ? $weatherEmoji . ', '
-                : $data['weather'][0]['description'] . ', ';
+                ? $weatherEmoji . '  '
+                : $data['weather'][0]['description'] . '  ';
             $processedData .= 'wind ' . round(($data['wind']['speed'] * 18) / 5) . ' km/h';
             $processedData .= PHP_EOL;
         }
