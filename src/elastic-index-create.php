@@ -41,6 +41,7 @@ echo 'Set mapping..' . PHP_EOL;
 
 for ($i = 0; $i < 21; $i++) {
     $citiesListRaw = file_get_contents("../cities_list_{$i}.json");
+    /** @var array $citiesList */
     $citiesList = json_decode($citiesListRaw, true);
     unset($citiesListRaw);
     if (empty($citiesList)) {
