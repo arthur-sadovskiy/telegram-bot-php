@@ -88,7 +88,7 @@ class Searcher
             'query' => [
                 'bool' => [
                     'must' => [
-                        'match_all' => []
+                        'match_all' => new \stdClass()
                     ],
                     'filter' => [
                         'geo_distance' => [
