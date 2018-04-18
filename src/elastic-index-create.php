@@ -19,21 +19,15 @@ if (!$index->exists()) {
     $index->create();
     echo 'Created index..' . PHP_EOL;
 }
-//$index->delete(); exit;
+//$index->delete(); exit('Removed index ' . $index->getName() . PHP_EOL);
 
 $type = $index->getType('cities');
 
-// mapping is needed here to fix PHP Fatal error:
-// "index: /telegram-bot/cities/1283378 caused mapper [coord.lat] of different type,
-// current_type [double], merged_type [long]"
 $mapping = new \Elastica\Type\Mapping();
 $mapping->setType($type);
 $mapping->setProperties([
     'coord' => [
-        'properties' => [
-            'lat' => ['type' => 'double'],
-            'lon' => ['type' => 'double'],
-        ]
+        'type' => 'geo_point'
     ]
 ]);
 $mapping->send();

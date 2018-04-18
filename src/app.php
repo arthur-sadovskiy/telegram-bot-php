@@ -24,15 +24,43 @@ if (!$weatherApiToken) {
 
 $telegram = new Api($token);
 $result = $telegram->getWebhookUpdate();
-//$result = $telegram->getUpdates(['offset' => 719560554]);
+////$result = $telegram->getUpdates(['offset' => 719560554]);
 //$result = $telegram->getUpdates(); // TODO
 //$result = $result[0]; // TODO
-//$result = $result[count($result) - 1]; // TODO
+////$result = $result[count($result) - 1]; // TODO
 
 if (isset($result['message'])) {
-    $providedText = $result['message']['text'];
+    $providedText = $result['message']['text'] ?? null;
     $chatId = $result['message']['chat']['id'];
-    if (!$providedText || $providedText === '/start') {
+
+    /** @var Telegram\Bot\Objects\Location $location */
+    $location = $result['message']['location'] ?? null;
+    if (null !== $location) {
+        $userLocation = [
+            'lat' => $location->getLatitude(),
+            'lon' => $location->getLongitude()
+        ];
+
+        $foundData = (new Searcher())->searchByLocation($userLocation);
+
+        if (count($foundData) === 1) {
+            $params = [
+                WeatherClient::CITY_KEY => $foundData[0]['id'],
+                WeatherClient::APPID_KEY => $weatherApiToken
+            ];
+
+            $replyText = (new WeatherClient($params))->fetch();
+            $replyText .= PHP_EOL . PHP_EOL;
+            $replyText .= 'Type "/start" to see menu or provide your location for immediate weather forecast';
+        } else {
+            $replyText = "We couldn't find your city :(";
+        }
+
+        $telegram->sendMessage(
+            ['chat_id' => $chatId, 'text' => $replyText]
+        );
+
+    } elseif (!$providedText || $providedText === '/start') {
         $replyText = 'Provide city name, for which you would like to get weather forecast.';
 
         $telegram->sendMessage(

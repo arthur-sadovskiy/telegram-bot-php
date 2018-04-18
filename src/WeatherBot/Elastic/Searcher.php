@@ -4,10 +4,13 @@ namespace WeatherBot\Elastic;
 
 use Elastica\Query;
 use Elastica\Search;
+use Elastica\Exception\InvalidException;
 
 class Searcher
 {
     private $search;
+
+    private const SEARCH_RADIUS = '10km';
 
     /**
      * Searcher constructor.
@@ -65,5 +68,50 @@ class Searcher
         }
 
         return $foundCities;
+    }
+
+    /**
+     * @param array $location
+     *
+     * @return array
+     */
+    public function searchByLocation(array $location): array
+    {
+        $query = new Query([
+            'sort' => [
+                '_geo_distance' => [
+                    'coord' => $location,
+                    'order' => 'asc',
+                    'unit' => 'km'
+                ]
+            ],
+            'query' => [
+                'bool' => [
+                    'must' => [
+                        'match_all' => []
+                    ],
+                    'filter' => [
+                        'geo_distance' => [
+                            'distance' => self::SEARCH_RADIUS,
+                            'coord' => $location
+                        ]
+                    ]
+                ]
+            ]
+        ]);
+
+        $query->setSize(1);
+
+        $this->search->setQuery($query);
+
+        $resultSet = $this->search->search();
+        try {
+            $result = $resultSet->offsetGet(0);
+            $foundCity[] = $result->getSource();
+        } catch (InvalidException $e) {
+            $foundCity = [];
+        }
+
+        return $foundCity;
     }
 }
