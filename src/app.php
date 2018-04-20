@@ -42,26 +42,41 @@ if (isset($result['message'])) {
         ];
 
         $foundData = (new Searcher())->searchByLocation($userLocation);
+        $cityId = $foundData[0]['id'];
+
+        $responseMessageParams['chat_id'] = $chatId;
 
         if (count($foundData) === 1) {
             $params = [
-                WeatherClient::CITY_KEY => $foundData[0]['id'],
+                WeatherClient::CITY_KEY => $cityId,
                 WeatherClient::APPID_KEY => $weatherApiToken
             ];
 
             $replyText = (new WeatherClient($params))->fetch();
             $replyText .= PHP_EOL . PHP_EOL;
             $replyText .= 'Type "/start" to see menu or provide your location for immediate weather forecast';
+            $responseMessageParams['text'] = $replyText;
+
+            $inlineKeyboard = Keyboard::make()
+                ->inline()
+                ->row(
+                    Keyboard::inlineButton([
+                        'text' => 'Repeat last request',
+                        'callback_data' => $cityId
+                    ])
+                );
+
+            $responseMessageParams['reply_markup'] = $inlineKeyboard;
         } else {
             $replyText = "We couldn't find your city :(";
+            $responseMessageParams['text'] = $replyText;
         }
 
-        $telegram->sendMessage(
-            ['chat_id' => $chatId, 'text' => $replyText]
-        );
+        $telegram->sendMessage($responseMessageParams);
 
     } elseif (!$providedText || $providedText === '/start') {
-        $replyText = 'Provide city name, for which you would like to get weather forecast.';
+        $replyText = 'Provide city name, for which you would like to get weather forecast.' . PHP_EOL;
+        $replyText .= 'Or just send your location!';
 
         $telegram->sendMessage(
             ['chat_id' => $chatId, 'text' => $replyText]
@@ -70,17 +85,29 @@ if (isset($result['message'])) {
         $foundData = (new Searcher())->searchByName($providedText);
 
         if (count($foundData) === 1) {
+            $cityId = $foundData[0]['id'];
             $params = [
-                WeatherClient::CITY_KEY => $foundData[0]['id'],
+                WeatherClient::CITY_KEY => $cityId,
                 WeatherClient::APPID_KEY => $weatherApiToken
             ];
 
             $replyText = (new WeatherClient($params))->fetch();
             $replyText .= PHP_EOL . PHP_EOL . 'To see menu again, type "/start"';
 
-            $telegram->sendMessage(
-                ['chat_id' => $chatId, 'text' => $replyText]
-            );
+            $inlineKeyboard = Keyboard::make()
+                ->inline()
+                ->row(
+                    Keyboard::inlineButton([
+                        'text' => 'Repeat last request',
+                        'callback_data' => $cityId
+                    ])
+                );
+
+            $responseMessageParams['chat_id'] = $chatId;
+            $responseMessageParams['text'] = $replyText;
+            $responseMessageParams['reply_markup'] = $inlineKeyboard;
+
+            $telegram->sendMessage($responseMessageParams);
         } elseif (count($foundData) > 1) {
             $buttons = [];
             // TODO need to set 2-3 buttons per row..
@@ -127,8 +154,17 @@ if (isset($result['message'])) {
     $replyText = (new WeatherClient($params))->fetch();
     $replyText .= PHP_EOL . PHP_EOL . 'To see menu again, type "/start"';
 
+    $inlineKeyboard = Keyboard::make()
+        ->inline()
+        ->row(
+            Keyboard::inlineButton([
+                'text' => 'Repeat last request',
+                'callback_data' => $callbackData
+            ])
+        );
+
     $telegram->sendMessage(
-        ['chat_id' => $chatId, 'text' => $replyText]
+        ['chat_id' => $chatId, 'text' => $replyText, 'reply_markup' => $inlineKeyboard]
     );
 
     $telegram->answerCallbackQuery(
