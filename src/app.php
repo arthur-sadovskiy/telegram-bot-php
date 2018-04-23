@@ -3,11 +3,8 @@
 require_once '../vendor/autoload.php';
 require_once 'bootstrap.php';
 
-use Telegram\Bot\Api;
-use Telegram\Bot\Keyboard\Keyboard;
-use WeatherBot\Config;
-use WeatherBot\Elastic\Searcher;
-use WeatherBot\Helper\WeatherClient;
+use Telegram\Bot\{Api, Keyboard\Keyboard};
+use WeatherBot\{Config, Elastic\Searcher, Helper\WeatherClient};
 
 $config = new Config();
 $weatherApiToken = $config->get('weather_api_token');

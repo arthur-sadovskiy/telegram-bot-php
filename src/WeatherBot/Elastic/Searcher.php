@@ -2,10 +2,7 @@
 
 namespace WeatherBot\Elastic;
 
-use Elastica\Client;
-use Elastica\Search;
-use Elastica\Query;
-use Elastica\Exception\InvalidException;
+use Elastica\{Client, Search, Query, Exception\InvalidException};
 
 class Searcher
 {
