@@ -2,8 +2,9 @@
 
 namespace WeatherBot\Elastic;
 
-use Elastica\Query;
+use Elastica\Client;
 use Elastica\Search;
+use Elastica\Query;
 use Elastica\Exception\InvalidException;
 
 class Searcher
@@ -14,13 +15,13 @@ class Searcher
 
     /**
      * Searcher constructor.
+     * @param Client $elasticaClient
      */
-    public function __construct()
+    public function __construct(Client $elasticaClient)
     {
-        $client = (new Client())->create();
-        $this->search = new Search($client);
+        $this->search = new Search($elasticaClient);
 
-        $index = $client->getIndex('telegram-bot');
+        $index = $elasticaClient->getIndex('telegram-bot');
         $this->search->addIndex($index);
         $this->search->addType($index->getType('cities'));
     }

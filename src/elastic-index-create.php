@@ -5,14 +5,17 @@
 require_once '../vendor/autoload.php';
 require_once 'bootstrap.php';
 
+use WeatherBot\Config;
+
 echo 'Starting..' . PHP_EOL;
 
-$defaultParams = [
-    'host' => '127.0.0.1',
-    'port' => 9200
+$config = new Config();
+$params = [
+    'host' => $config->get('elastic_host'),
+    'port' => $config->get('elastic_port')
 ];
 
-$elasticaClient = new \Elastica\Client($defaultParams);
+$elasticaClient = new \Elastica\Client($params);
 
 $index = $elasticaClient->getIndex('telegram-bot');
 if (!$index->exists()) {

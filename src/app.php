@@ -4,25 +4,15 @@ require_once '../vendor/autoload.php';
 require_once 'bootstrap.php';
 
 use Telegram\Bot\Api;
-use WeatherBot\Helper\WeatherClient;
 use Telegram\Bot\Keyboard\Keyboard;
+use WeatherBot\Config;
 use WeatherBot\Elastic\Searcher;
+use WeatherBot\Helper\WeatherClient;
 
-$config = file_exists('app_config.ini')
-    ? parse_ini_file('app_config.ini')
-    : [];
+$config = new Config();
+$weatherApiToken = $config->get('weather_api_token');
 
-$token = getenv('TOKEN');
-if (!$token) {
-    $token = $config['token'];
-}
-
-$weatherApiToken = getenv('WEATHER_TOKEN');
-if (!$weatherApiToken) {
-    $weatherApiToken = $config['weather_api_token'];
-}
-
-$telegram = new Api($token);
+$telegram = new Api($config->get('telegram_api_token'));
 $result = $telegram->getWebhookUpdate();
 ////$result = $telegram->getUpdates(['offset' => 719560554]);
 //$result = $telegram->getUpdates(); // TODO
@@ -33,6 +23,11 @@ if (isset($result['message'])) {
     $providedText = $result['message']['text'] ?? null;
     $chatId = $result['message']['chat']['id'];
 
+    $client = new \Elastica\Client([
+        'host' => $config->get('elastic_host'),
+        'port' => $config->get('elastic_port')
+    ]);
+
     /** @var Telegram\Bot\Objects\Location $location */
     $location = $result['message']['location'] ?? null;
     if (null !== $location) {
@@ -41,7 +36,7 @@ if (isset($result['message'])) {
             'lon' => $location->getLongitude()
         ];
 
-        $foundData = (new Searcher())->searchByLocation($userLocation);
+        $foundData = (new Searcher($client))->searchByLocation($userLocation);
         $cityId = $foundData[0]['id'];
 
         $responseMessageParams['chat_id'] = $chatId;
@@ -82,7 +77,7 @@ if (isset($result['message'])) {
             ['chat_id' => $chatId, 'text' => $replyText]
         );
     } elseif (is_string($providedText)) {
-        $foundData = (new Searcher())->searchByName($providedText);
+        $foundData = (new Searcher($client))->searchByName($providedText);
 
         if (count($foundData) === 1) {
             $cityId = $foundData[0]['id'];

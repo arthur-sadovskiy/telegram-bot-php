@@ -1,2 +1,4 @@
 vendor/
 composer.phar
+src/WeatherBot/config/config.php
+src/WeatherBot/config/elastic.php
