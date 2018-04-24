@@ -9,8 +9,6 @@ class WeatherClient
 {
     public const APPID_KEY = 'appid';
     public const CITY_KEY = 'id';
-    public const CITY_KYIV = 703448;
-    public const CITY_KHARKIV = 706483;
 
     private const API_URL = 'http://api.openweathermap.org/data/2.5/forecast';
     private const TEMPERATURE_UNITS_FORMAT_KEY = 'units';
