@@ -2,7 +2,7 @@
 
 namespace WeatherBot\Helper;
 
-use GuzzleHttp\Client;
+use GuzzleHttp\{Client, Exception\ServerException};
 use WeatherBot\Emoji;
 
 class WeatherClient
@@ -40,10 +40,15 @@ class WeatherClient
         $urlParams = $this->prepareUrlParams();
 
         $client = new Client();
-        $response = $client->get(self::API_URL . '?' . $urlParams);
-        $weatherData = json_decode($response->getBody(), true);
+        try {
+            $response = $client->get(self::API_URL . '?' . $urlParams);
+            $weatherData = json_decode($response->getBody(), true);
 
-        return $this->prepareData($weatherData);
+            return $this->prepareData($weatherData);
+        } catch (ServerException $e) {
+            // handle 500 level errors
+            return "Some issue has happened with my weather provider :'(";
+        }
     }
 
     /**
