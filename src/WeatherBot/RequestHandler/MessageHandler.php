@@ -4,7 +4,7 @@ namespace WeatherBot\RequestHandler;
 
 use Elastica\Client as ElasticaClient;
 use Telegram\Bot\{Keyboard\Keyboard, Objects\Location};
-use WeatherBot\{Elastic\Searcher, Helper\WeatherClient};
+use WeatherBot\{Elastic\Searcher, Helper\WeatherClient, Response};
 
 class MessageHandler extends AbstractHandler
 {
@@ -19,10 +19,6 @@ class MessageHandler extends AbstractHandler
     private $elasticaClient;
 
     /**
-     * @return array
-     */
-
-    /**
      * @param ElasticaClient $elasticaClient
      */
     public function setElasticaClient(ElasticaClient $elasticaClient)
@@ -31,9 +27,9 @@ class MessageHandler extends AbstractHandler
     }
 
     /**
-     * @return array
+     * @return Response
      */
-    public function handle(): array
+    public function handle(): Response
     {
         $this->chatId = $this->telegramUpdate->getMessage()->getChat()->getId();
         $providedText = $this->telegramUpdate->getMessage()->getText();
@@ -44,12 +40,8 @@ class MessageHandler extends AbstractHandler
         } elseif (null !== $providedText) {
             $response = $this->handleText($providedText);
         } else {
-            $response = [
-                'main' => [
-                    'chat_id' => $this->chatId,
-                    'text' => 'Some error happened :('
-                ]
-            ];
+            $response = (new Response())->setChatId($this->chatId)
+                ->setText('Some error happened :(');
         }
 
         return $response;
@@ -58,9 +50,9 @@ class MessageHandler extends AbstractHandler
     /**
      * @param Location $location
      *
-     * @return array
+     * @return Response
      */
-    private function handleLocation(Location $location): array
+    private function handleLocation(Location $location): Response
     {
         $userLocation = [
             'lat' => $location->getLatitude(),
@@ -70,7 +62,7 @@ class MessageHandler extends AbstractHandler
         $foundData = (new Searcher($this->elasticaClient))->searchByLocation($userLocation);
         $cityId = $foundData[0]['id'];
 
-        $responseMessageParams['chat_id'] = $this->chatId;
+        $response = (new Response())->setChatId($this->chatId);
 
         if (!empty($foundData)) {
             $params = [
@@ -81,7 +73,6 @@ class MessageHandler extends AbstractHandler
             $replyText = (new WeatherClient($params))->fetch();
             $replyText .= PHP_EOL . PHP_EOL;
             $replyText .= 'Type "/start" to see menu or provide your location for immediate weather forecast';
-            $responseMessageParams['text'] = $replyText;
 
             $inlineKeyboard = Keyboard::make()
                 ->inline()
@@ -92,31 +83,30 @@ class MessageHandler extends AbstractHandler
                     ])
                 );
 
-            $responseMessageParams['reply_markup'] = $inlineKeyboard;
+            $response->setText($replyText)
+                ->setReplyMarkup($inlineKeyboard);
         } else {
             $replyText = "We couldn't find your city :(";
-            $responseMessageParams['text'] = $replyText;
+            $response->setText($replyText);
         }
 
-        return [
-            'main' => $responseMessageParams
-        ];
+        return $response;
     }
 
     /**
      * @param string $text
      *
-     * @return array
+     * @return Response
      */
-    private function handleText(string $text): array
+    private function handleText(string $text): Response
     {
-        $responseMessageParams['chat_id'] = $this->chatId;
+        $response = (new Response())->setChatId($this->chatId);
 
         if ($text === '/start') {
             $replyText = 'Provide city name, for which you would like to get weather forecast.' . PHP_EOL;
             $replyText .= 'Or just send your location!';
 
-            $responseMessageParams['text'] = $replyText;
+            $response->setText($replyText);
         } elseif (\is_string($text)) {
             $foundData = (new Searcher($this->elasticaClient))->searchByName($text);
 
@@ -139,8 +129,8 @@ class MessageHandler extends AbstractHandler
                         ])
                     );
 
-                $responseMessageParams['text'] = $replyText;
-                $responseMessageParams['reply_markup'] = $inlineKeyboard;
+                $response->setText($replyText)
+                    ->setReplyMarkup($inlineKeyboard);
             } elseif (\count($foundData) > 1) {
                 $buttons = [];
                 $inlineKeyboard = Keyboard::make()->inline();
@@ -157,15 +147,14 @@ class MessageHandler extends AbstractHandler
 
                 $replyText = "We didn't find your city, but there are some very similar:";
 
-                $responseMessageParams['text'] = $replyText;
-                $responseMessageParams['reply_markup'] = $inlineKeyboard;
+                $response->setText($replyText)
+                    ->setReplyMarkup($inlineKeyboard);
             } else {
-                $responseMessageParams['text'] = "We couldn't find your city :(";
+                $replyText = "We couldn't find your city :(";
+                $response->setText($replyText);
             }
         }
 
-        return [
-            'main' => $responseMessageParams
-        ];
+        return $response;
     }
 }

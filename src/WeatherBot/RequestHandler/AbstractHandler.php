@@ -3,6 +3,7 @@
 namespace WeatherBot\RequestHandler;
 
 use Telegram\Bot\Objects\Update;
+use WeatherBot\Response;
 
 abstract class AbstractHandler
 {
@@ -34,7 +35,7 @@ abstract class AbstractHandler
     }
 
     /**
-     * @return array
+     * @return Response
      */
-    abstract public function handle(): array;
+    abstract public function handle(): Response;
 }

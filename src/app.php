@@ -24,7 +24,7 @@ if ($handler instanceof MessageHandler) {
 }
 
 $response = $handler->handle();
-$telegram->sendMessage($response['main']);
+$telegram->sendMessage($response->getMessageParams());
 if ($handler instanceof CallbackHandler) {
-    $telegram->answerCallbackQuery($response['callback']);
+    $telegram->answerCallbackQuery($response->getCallbackAnswerParams());
 }

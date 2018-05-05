@@ -3,14 +3,14 @@
 namespace WeatherBot\RequestHandler;
 
 use Telegram\Bot\{Keyboard\Keyboard, Objects\CallbackQuery};
-use WeatherBot\Helper\WeatherClient;
+use WeatherBot\{Helper\WeatherClient, Response};
 
 class CallbackHandler extends AbstractHandler
 {
     /**
-     * @return array
+     * @return Response
      */
-    public function handle(): array
+    public function handle(): Response
     {
         /** @var CallbackQuery $callbackQuery */
         $callbackQuery = $this->telegramUpdate->getCallbackQuery();
@@ -35,15 +35,10 @@ class CallbackHandler extends AbstractHandler
                 ])
             );
 
-        return [
-            'main' => [
-                'chat_id' => $chatId,
-                'text' => $replyText,
-                'reply_markup' => $inlineKeyboard
-            ],
-            'callback' => [
-                'callback_query_id' => $callbackQueryId
-            ]
-        ];
+        return (new Response())
+            ->setChatId($chatId)
+            ->setText($replyText)
+            ->setReplyMarkup($inlineKeyboard)
+            ->setCallbackQueryId($callbackQueryId);
     }
 }
