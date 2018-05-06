@@ -2,11 +2,13 @@
 
 namespace WeatherBot\RequestHandler;
 
-use Telegram\Bot\{Keyboard\Keyboard, Objects\CallbackQuery};
-use WeatherBot\{Helper\WeatherClient, Response};
+use Telegram\Bot\Objects\CallbackQuery;
+use WeatherBot\{Helper\WeatherClient, InlineKeyboardTrait, Response};
 
 class CallbackHandler extends AbstractHandler
 {
+    use InlineKeyboardTrait;
+
     /**
      * @return Response
      */
@@ -15,7 +17,7 @@ class CallbackHandler extends AbstractHandler
         /** @var CallbackQuery $callbackQuery */
         $callbackQuery = $this->telegramUpdate->getCallbackQuery();
         $callbackQueryId = $callbackQuery->getId();
-        $callbackData = $callbackQuery->getData();
+        $callbackData = (int) $callbackQuery->getData();
         $chatId = $callbackQuery->getFrom()->getId();
 
         $params = [
@@ -26,19 +28,10 @@ class CallbackHandler extends AbstractHandler
         $replyText = (new WeatherClient($params))->fetch();
         $replyText .= PHP_EOL . PHP_EOL . 'To see menu again, type "/start"';
 
-        $inlineKeyboard = Keyboard::make()
-            ->inline()
-            ->row(
-                Keyboard::inlineButton([
-                    'text' => 'Repeat last request',
-                    'callback_data' => $callbackData
-                ])
-            );
-
         return (new Response())
             ->setChatId($chatId)
             ->setText($replyText)
-            ->setReplyMarkup($inlineKeyboard)
+            ->setReplyMarkup($this->getInlineKeyboardRepeat($callbackData))
             ->setCallbackQueryId($callbackQueryId);
     }
 }

@@ -3,11 +3,13 @@
 namespace WeatherBot\RequestHandler;
 
 use Elastica\Client as ElasticaClient;
-use Telegram\Bot\{Keyboard\Keyboard, Objects\Location};
-use WeatherBot\{Elastic\Searcher, Helper\WeatherClient, Response};
+use Telegram\Bot\Objects\Location;
+use WeatherBot\{Elastic\Searcher, Helper\WeatherClient, InlineKeyboardTrait, Response};
 
 class MessageHandler extends AbstractHandler
 {
+    use InlineKeyboardTrait;
+
     /**
      * @var int
      */
@@ -74,17 +76,8 @@ class MessageHandler extends AbstractHandler
             $replyText .= PHP_EOL . PHP_EOL;
             $replyText .= 'Type "/start" to see menu or provide your location for immediate weather forecast';
 
-            $inlineKeyboard = Keyboard::make()
-                ->inline()
-                ->row(
-                    Keyboard::inlineButton([
-                        'text' => 'Repeat last request',
-                        'callback_data' => $cityId
-                    ])
-                );
-
             $response->setText($replyText)
-                ->setReplyMarkup($inlineKeyboard);
+                ->setReplyMarkup($this->getInlineKeyboardRepeat($cityId));
         } else {
             $replyText = "We couldn't find your city :(";
             $response->setText($replyText);
@@ -120,35 +113,13 @@ class MessageHandler extends AbstractHandler
                 $replyText = (new WeatherClient($params))->fetch();
                 $replyText .= PHP_EOL . PHP_EOL . 'To see menu again, type "/start"';
 
-                $inlineKeyboard = Keyboard::make()
-                    ->inline()
-                    ->row(
-                        Keyboard::inlineButton([
-                            'text' => 'Repeat last request',
-                            'callback_data' => $cityId
-                        ])
-                    );
-
                 $response->setText($replyText)
-                    ->setReplyMarkup($inlineKeyboard);
+                    ->setReplyMarkup($this->getInlineKeyboardRepeat($cityId));
             } elseif (\count($foundData) > 1) {
-                $buttons = [];
-                $inlineKeyboard = Keyboard::make()->inline();
-                foreach ($foundData as $city) {
-                    $buttons[] = Keyboard::inlineButton([
-                        'text' => "{$city['name']} ({$city['country']})",
-                        'callback_data' => $city['id']
-                    ]);
-                    if (\count($buttons) === 2) {
-                        $inlineKeyboard = \call_user_func_array([$inlineKeyboard, 'row'], $buttons);
-                        $buttons = [];
-                    }
-                }
-
                 $replyText = "We didn't find your city, but there are some very similar:";
 
                 $response->setText($replyText)
-                    ->setReplyMarkup($inlineKeyboard);
+                    ->setReplyMarkup($this->getInlineKeyboardMultipleChoices($foundData));
             } else {
                 $replyText = "We couldn't find your city :(";
                 $response->setText($replyText);
