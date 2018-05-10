@@ -20,12 +20,11 @@ class CallbackHandler extends AbstractHandler
         $callbackData = (int) $callbackQuery->getData();
         $chatId = $callbackQuery->getFrom()->getId();
 
-        $params = [
-            WeatherClient::CITY_KEY => $callbackData,
-            WeatherClient::APPID_KEY => $this->weatherApiToken
-        ];
+        $weatherClient = (new WeatherClient())
+            ->setParam(WeatherClient::CITY_KEY, $callbackData)
+            ->setParam(WeatherClient::APPID_KEY, $this->weatherApiToken);
 
-        $replyText = (new WeatherClient($params))->fetch();
+        $replyText = $weatherClient->fetch();
         $replyText .= PHP_EOL . PHP_EOL . 'To see menu again, type "/start"';
 
         return (new Response())

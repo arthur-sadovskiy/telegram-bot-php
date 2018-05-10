@@ -17,19 +17,32 @@ class WeatherClient
     /**
      * @var array
      */
-    private $params = [];
+    private $params;
 
     /**
      * WeatherClient constructor.
      * @param array $params
      */
-    public function __construct(array $params)
+    public function __construct(array $params = [])
     {
         if (!isset($params[self::TEMPERATURE_UNITS_FORMAT_KEY])) {
             $params[self::TEMPERATURE_UNITS_FORMAT_KEY] = self::TEMPERATURE_CELSIUS;
         }
 
         $this->params = $params;
+    }
+
+    /**
+     * @param string $key
+     * @param string $value
+     *
+     * @return $this
+     */
+    public function setParam(string $key, string $value): WeatherClient
+    {
+        $this->params[$key] = $value;
+
+        return $this;
     }
 
     /**

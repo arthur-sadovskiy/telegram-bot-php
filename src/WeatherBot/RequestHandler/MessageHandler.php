@@ -67,12 +67,11 @@ class MessageHandler extends AbstractHandler
         $response = (new Response())->setChatId($this->chatId);
 
         if (!empty($foundData)) {
-            $params = [
-                WeatherClient::CITY_KEY => $cityId,
-                WeatherClient::APPID_KEY => $this->weatherApiToken
-            ];
+            $weatherClient = (new WeatherClient())
+                ->setParam(WeatherClient::CITY_KEY, $cityId)
+                ->setParam(WeatherClient::APPID_KEY, $this->weatherApiToken);
 
-            $replyText = (new WeatherClient($params))->fetch();
+            $replyText = $weatherClient->fetch();
             $replyText .= PHP_EOL . PHP_EOL;
             $replyText .= 'Type "/start" to see menu or provide your location for immediate weather forecast';
 
@@ -105,12 +104,11 @@ class MessageHandler extends AbstractHandler
 
             if (\count($foundData) === 1) {
                 $cityId = $foundData[0]['id'];
-                $params = [
-                    WeatherClient::CITY_KEY => $cityId,
-                    WeatherClient::APPID_KEY => $this->weatherApiToken
-                ];
+                $weatherClient = (new WeatherClient())
+                    ->setParam(WeatherClient::CITY_KEY, $cityId)
+                    ->setParam(WeatherClient::APPID_KEY, $this->weatherApiToken);
 
-                $replyText = (new WeatherClient($params))->fetch();
+                $replyText = $weatherClient->fetch();
                 $replyText .= PHP_EOL . PHP_EOL . 'To see menu again, type "/start"';
 
                 $response->setText($replyText)
