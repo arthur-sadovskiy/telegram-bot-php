@@ -28,9 +28,9 @@ class CallbackHandler extends AbstractHandler
         $replyText .= PHP_EOL . PHP_EOL . 'To see menu again, type "/start"';
 
         return (new Response())
-            ->setChatId($chatId)
-            ->setText($replyText)
-            ->setReplyMarkup($this->getInlineKeyboardRepeat($callbackData))
-            ->setCallbackQueryId($callbackQueryId);
+            ->setMessageParam(Response::CHAT_ID, $chatId)
+            ->setMessageParam(Response::TEXT, $replyText)
+            ->setMessageParam(Response::REPLY_MARKUP, $this->getInlineKeyboardRepeat($callbackData))
+            ->setCallbackAnswerParam(Response::CALLBACK_QUERY_ID, $callbackQueryId);
     }
 }

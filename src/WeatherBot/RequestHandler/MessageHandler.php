@@ -42,8 +42,9 @@ class MessageHandler extends AbstractHandler
         } elseif (null !== $providedText) {
             $response = $this->handleText($providedText);
         } else {
-            $response = (new Response())->setChatId($this->chatId)
-                ->setText('Some error happened :(');
+            $response = (new Response())
+                ->setMessageParam(Response::CHAT_ID, $this->chatId)
+                ->setMessageParam(Response::TEXT, 'Some error happened :(');
         }
 
         return $response;
@@ -64,7 +65,7 @@ class MessageHandler extends AbstractHandler
         $foundData = (new Searcher($this->elasticaClient))->searchByLocation($userLocation);
         $cityId = $foundData[0]['id'];
 
-        $response = (new Response())->setChatId($this->chatId);
+        $response = (new Response())->setMessageParam(Response::CHAT_ID, $this->chatId);
 
         if (!empty($foundData)) {
             $weatherClient = (new WeatherClient())
@@ -75,11 +76,11 @@ class MessageHandler extends AbstractHandler
             $replyText .= PHP_EOL . PHP_EOL;
             $replyText .= 'Type "/start" to see menu or provide your location for immediate weather forecast';
 
-            $response->setText($replyText)
-                ->setReplyMarkup($this->getInlineKeyboardRepeat($cityId));
+            $response->setMessageParam(Response::TEXT, $replyText)
+                ->setMessageParam(Response::REPLY_MARKUP, $this->getInlineKeyboardRepeat($cityId));
         } else {
             $replyText = "We couldn't find your city :(";
-            $response->setText($replyText);
+            $response->setMessageParam(Response::TEXT, $replyText);
         }
 
         return $response;
@@ -92,13 +93,13 @@ class MessageHandler extends AbstractHandler
      */
     private function handleText(string $text): Response
     {
-        $response = (new Response())->setChatId($this->chatId);
+        $response = (new Response())->setMessageParam(Response::CHAT_ID, $this->chatId);
 
         if ($text === '/start') {
             $replyText = 'Provide city name, for which you would like to get weather forecast.' . PHP_EOL;
             $replyText .= 'Or just send your location!';
 
-            $response->setText($replyText);
+            $response->setMessageParam(Response::TEXT, $replyText);
         } elseif (\is_string($text)) {
             $foundData = (new Searcher($this->elasticaClient))->searchByName($text);
 
@@ -111,16 +112,16 @@ class MessageHandler extends AbstractHandler
                 $replyText = $weatherClient->fetch();
                 $replyText .= PHP_EOL . PHP_EOL . 'To see menu again, type "/start"';
 
-                $response->setText($replyText)
-                    ->setReplyMarkup($this->getInlineKeyboardRepeat($cityId));
+                $response->setMessageParam(Response::TEXT, $replyText)
+                    ->setMessageParam(Response::REPLY_MARKUP, $this->getInlineKeyboardRepeat($cityId));
             } elseif (\count($foundData) > 1) {
                 $replyText = "We didn't find your city, but there are some very similar:";
 
-                $response->setText($replyText)
-                    ->setReplyMarkup($this->getInlineKeyboardMultipleChoices($foundData));
+                $response->setMessageParam(Response::TEXT, $replyText)
+                    ->setMessageParam(Response::REPLY_MARKUP, $this->getInlineKeyboardMultipleChoices($foundData));
             } else {
                 $replyText = "We couldn't find your city :(";
-                $response->setText($replyText);
+                $response->setMessageParam(Response::TEXT, $replyText);
             }
         }
 

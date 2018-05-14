@@ -4,6 +4,12 @@ namespace WeatherBot;
 
 class Response
 {
+    public const CHAT_ID = 'chat_id';
+    public const TEXT = 'text';
+    public const REPLY_MARKUP = 'reply_markup';
+
+    public const CALLBACK_QUERY_ID = 'callback_query_id';
+
     /**
      * @var array
      */
@@ -15,37 +21,14 @@ class Response
     private $callbackAnswerParams;
 
     /**
-     * @param int $chatId
+     * @param string $key
+     * @param string $value
      *
      * @return Response
      */
-    public function setChatId(int $chatId): Response
+    public function setMessageParam(string $key, string $value): Response
     {
-        $this->messageParams['chat_id'] = $chatId;
-
-        return $this;
-    }
-
-    /**
-     * @param string $text
-     *
-     * @return Response
-     */
-    public function setText(string $text): Response
-    {
-        $this->messageParams['text'] = $text;
-
-        return $this;
-    }
-
-    /**
-     * @param string $replyMarkup
-     *
-     * @return Response
-     */
-    public function setReplyMarkup(string $replyMarkup): Response
-    {
-        $this->messageParams['reply_markup'] = $replyMarkup;
+        $this->messageParams[$key] = $value;
 
         return $this;
     }
@@ -59,13 +42,14 @@ class Response
     }
 
     /**
-     * @param string $callbackQueryId
+     * @param string $key
+     * @param string $value
      *
      * @return Response
      */
-    public function setCallbackQueryId(string $callbackQueryId): Response
+    public function setCallbackAnswerParam(string $key, string $value): Response
     {
-        $this->callbackAnswerParams['callback_query_id'] = $callbackQueryId;
+        $this->callbackAnswerParams[$key] = $value;
 
         return $this;
     }
