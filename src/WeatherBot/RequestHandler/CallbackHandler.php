@@ -17,12 +17,18 @@ class CallbackHandler extends AbstractHandler
         /** @var CallbackQuery $callbackQuery */
         $callbackQuery = $this->telegramUpdate->getCallbackQuery();
         $callbackQueryId = $callbackQuery->getId();
-        $callbackData = (int) $callbackQuery->getData();
+        $callbackData = $callbackQuery->getData();
+        $callbackDataParts = explode('##', $callbackData);
+        $cityId = (int) $callbackDataParts[0];
+        $isDetailed = strpos($callbackData, '##') !== false
+            ? (bool) $callbackDataParts[1]
+            : true;
         $chatId = $callbackQuery->getFrom()->getId();
 
         $weatherClient = (new WeatherClient())
-            ->setParam(WeatherClient::CITY_KEY, $callbackData)
-            ->setParam(WeatherClient::APPID_KEY, $this->weatherApiToken);
+            ->setParam(WeatherClient::CITY_KEY, $cityId)
+            ->setParam(WeatherClient::APPID_KEY, $this->weatherApiToken)
+            ->setIsDetailedForecast($isDetailed);
 
         $replyText = $weatherClient->fetch();
         $replyText .= PHP_EOL . PHP_EOL . 'To see menu again, type "/start"';
@@ -30,7 +36,7 @@ class CallbackHandler extends AbstractHandler
         return (new Response())
             ->setMessageParam(Response::CHAT_ID, $chatId)
             ->setMessageParam(Response::TEXT, $replyText)
-            ->setMessageParam(Response::REPLY_MARKUP, $this->getInlineKeyboardRepeat($callbackData))
+            ->setMessageParam(Response::REPLY_MARKUP, $this->getInlineKeyboardRepeat($cityId, $isDetailed))
             ->setCallbackAnswerParam(Response::CALLBACK_QUERY_ID, $callbackQueryId);
     }
 }

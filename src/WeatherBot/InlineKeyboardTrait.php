@@ -8,17 +8,24 @@ trait InlineKeyboardTrait
 {
     /**
      * @param int $callbackData
+     * @param bool $isDetailedForecast
      *
      * @return Keyboard
      */
-    private function getInlineKeyboardRepeat(int $callbackData): Keyboard
+    private function getInlineKeyboardRepeat(int $callbackData, bool $isDetailedForecast = true): Keyboard
     {
         return Keyboard::make()
             ->inline()
             ->row(
                 Keyboard::inlineButton([
                     'text' => 'Repeat last request',
-                    'callback_data' => $callbackData
+                    'callback_data' => $callbackData . '##' . (int) $isDetailedForecast
+                ]),
+                Keyboard::inlineButton([
+                    'text' => $isDetailedForecast
+                        ? '10-days forecast'
+                        : 'Detailed forecast',
+                    'callback_data' => $callbackData . '##' . (int) !$isDetailedForecast
                 ])
             );
     }

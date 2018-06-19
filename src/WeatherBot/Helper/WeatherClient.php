@@ -11,6 +11,7 @@ class WeatherClient
     public const CITY_KEY = 'id';
 
     private const API_URL = 'http://api.openweathermap.org/data/2.5/forecast';
+    private const API_URL_DAILY = 'http://api.openweathermap.org/data/2.5/forecast/daily';
     private const TEMPERATURE_UNITS_FORMAT_KEY = 'units';
     private const TEMPERATURE_CELSIUS = 'metric';
 
@@ -18,6 +19,11 @@ class WeatherClient
      * @var array
      */
     private $params;
+
+    /**
+     * @var bool
+     */
+    private $isDetailedForecast = true;
 
     /**
      * WeatherClient constructor.
@@ -46,6 +52,18 @@ class WeatherClient
     }
 
     /**
+     * @param bool $isDetailedForecast
+     *
+     * @return $this
+     */
+    public function setIsDetailedForecast(bool $isDetailedForecast): WeatherClient
+    {
+        $this->isDetailedForecast = $isDetailedForecast;
+
+        return $this;
+    }
+
+    /**
      * @return string
      */
     public function fetch(): string
@@ -54,7 +72,8 @@ class WeatherClient
 
         $client = new Client();
         try {
-            $response = $client->get(self::API_URL . '?' . $urlParams);
+            $url = $this->isDetailedForecast ? self::API_URL : self::API_URL_DAILY;
+            $response = $client->get($url . '?' . $urlParams);
             $weatherData = json_decode($response->getBody(), true);
 
             return $this->prepareData($weatherData);
@@ -66,6 +85,7 @@ class WeatherClient
 
     /**
      * @param array $weatherData
+     *
      * @return string
      */
     private function prepareData(array $weatherData): string
@@ -74,24 +94,26 @@ class WeatherClient
             . $weatherData['city']['country']
             . PHP_EOL . PHP_EOL;
 
-        $weatherData = \array_slice($weatherData['list'], 0, 9);
+        $weatherData = $this->getWeatherDataList($weatherData);
         $emoji = new Emoji();
         foreach ($weatherData as $key => $data) {
-            $dayCurrent = date('l, F j', strtotime($data['dt_txt']));
+            $dayCurrent = date('l, F j', $this->getCurrentDayTimestamp($data));
             $isNextDay = true;
             if ($key > 0) {
-                $dayPrevious = date('l, F j', strtotime($weatherData[$key - 1]['dt_txt']));
+                $dayPrevious = date('l, F j', $this->getPreviousDayTimestamp($weatherData, $key));
                 $isNextDay = $dayCurrent !== $dayPrevious;
             }
             $processedData .= ($isNextDay && ($key > 0)) ? PHP_EOL : '';
             $processedData .= $isNextDay ? $dayCurrent . PHP_EOL : '';
-            $processedData .= date('H:i', strtotime($data['dt_txt'])) . '  ';
-            $processedData .= round($data['main']['temp']) . '°C  ';
+            if ($this->isDetailedForecast) {
+                $processedData .= date('H:i', strtotime($data['dt_txt'])) . '  ';
+            }
+            $processedData .= $this->getTemperature($data);
             $weatherEmoji = $emoji->render($data['weather'][0]['description']);
             $processedData .= !empty($weatherEmoji)
                 ? $weatherEmoji . '  '
                 : $data['weather'][0]['description'] . '  ';
-            $processedData .= 'wind ' . round(($data['wind']['speed'] * 18) / 5) . ' km/h';
+            $processedData .= 'wind ' . round(($this->getWindSpeed($data) * 18) / 5) . ' km/h';
             $processedData .= PHP_EOL;
         }
 
@@ -104,5 +126,72 @@ class WeatherClient
     private function prepareUrlParams(): string
     {
         return http_build_query($this->params);
+    }
+
+    /**
+     * @param array $weatherData
+     *
+     * @return array
+     */
+    private function getWeatherDataList(array $weatherData): array
+    {
+        return $this->isDetailedForecast
+            ? \array_slice($weatherData['list'], 0, 9)
+            : $weatherData['list'];
+    }
+
+    /**
+     * @param array $weatherData
+     *
+     * @return int
+     */
+    private function getCurrentDayTimestamp(array $weatherData): int
+    {
+        return $this->isDetailedForecast
+            ? strtotime($weatherData['dt_txt'])
+            : $weatherData['dt'];
+    }
+
+    /**
+     * @param array $weatherData
+     * @param int $key
+     *
+     * @return int
+     */
+    private function getPreviousDayTimestamp(array $weatherData, int $key): int
+    {
+        return $this->isDetailedForecast
+            ? strtotime($weatherData[$key - 1]['dt_txt'])
+            : $weatherData[$key - 1]['dt'];
+    }
+
+    /**
+     * @param array $weatherData
+     *
+     * @return string
+     */
+    private function getTemperature(array $weatherData): string
+    {
+        if ($this->isDetailedForecast) {
+            $temperatureData = round($weatherData['main']['temp']) . '°C  ';
+        } else {
+            $temperatureData = round($weatherData['temp']['min']) . '°C';
+            $temperatureData .= ' .. ';
+            $temperatureData .= round($weatherData['temp']['max']) . '°C  ';
+        }
+
+        return $temperatureData;
+    }
+
+    /**
+     * @param array $weatherData
+     *
+     * @return float
+     */
+    private function getWindSpeed(array $weatherData): float
+    {
+        return $this->isDetailedForecast
+            ? $weatherData['wind']['speed']
+            : $weatherData['speed'];
     }
 }
