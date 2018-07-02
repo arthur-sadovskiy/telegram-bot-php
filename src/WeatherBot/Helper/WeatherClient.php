@@ -4,6 +4,7 @@ namespace WeatherBot\Helper;
 
 use GuzzleHttp\{Client, Exception\ServerException};
 use WeatherBot\Emoji;
+use WeatherBot\RedisHelper;
 
 class WeatherClient
 {
@@ -24,6 +25,16 @@ class WeatherClient
      * @var bool
      */
     private $isDetailedForecast = true;
+
+    /**
+     * @var RedisHelper
+     */
+    private $redisHelper;
+
+    /**
+     * @var int
+     */
+    private $ttl;
 
     /**
      * WeatherClient constructor.
@@ -64,19 +75,45 @@ class WeatherClient
     }
 
     /**
+     * @param RedisHelper $helper
+     *
+     * @return $this
+     */
+    public function setRedisHelper(RedisHelper $helper): WeatherClient
+    {
+        $this->redisHelper = $helper;
+
+        return $this;
+    }
+
+    /**
      * @return string
      */
     public function fetch(): string
     {
-        $urlParams = $this->prepareUrlParams();
+        $redisClient = $this->redisHelper->getRedisClient();
+        $redisKey = $this->redisHelper->getRedisKey(
+            $this->params[self::CITY_KEY],
+            $this->isDetailedForecast
+        );
+        if (null !== $redisClient && $redisClient->exists($redisKey)) {
+            return $redisClient->get($redisKey);
+        }
 
-        $client = new Client();
         try {
             $url = $this->isDetailedForecast ? self::API_URL : self::API_URL_DAILY;
-            $response = $client->get($url . '?' . $urlParams);
+            $urlParams = $this->prepareUrlParams();
+            $response = (new Client())->get($url . '?' . $urlParams);
             $weatherData = json_decode($response->getBody(), true);
+            $preparedData = $this->prepareData($weatherData);
 
-            return $this->prepareData($weatherData);
+            if (null !== $redisClient) {
+                $valueForRedis = $this->redisHelper->prependCacheSign($preparedData);
+                $redisClient->setex($redisKey, $this->ttl, $valueForRedis);
+                $redisClient->close();
+            }
+
+            return $preparedData;
         } catch (ServerException $e) {
             // handle 500 level errors
             return "Some issue has happened with my weather provider :'(";
@@ -95,6 +132,7 @@ class WeatherClient
             . PHP_EOL . PHP_EOL;
 
         $weatherData = $this->getWeatherDataList($weatherData);
+        $this->ttl = $this->getTtl($weatherData);
         $emoji = new Emoji();
         foreach ($weatherData as $key => $data) {
             $dayCurrent = date('l, F j', $this->getCurrentDayTimestamp($data));
@@ -193,5 +231,19 @@ class WeatherClient
         return $this->isDetailedForecast
             ? $weatherData['wind']['speed']
             : $weatherData['speed'];
+    }
+
+    /**
+     * @param array $weatherData
+     *
+     * @return int
+     */
+    private function getTtl(array $weatherData): int
+    {
+        $upcomingTime = $this->isDetailedForecast
+            ? strtotime($weatherData[1]['dt_txt'])
+            : $weatherData[1]['dt'];
+
+        return $upcomingTime - time();
     }
 }

@@ -4,5 +4,6 @@ return array_merge([
         'telegram_api_token' => '',
         'weather_api_token' => '',
     ],
-    require 'elastic.php'
+    require 'elastic.php',
+    require 'redis.php'
 );

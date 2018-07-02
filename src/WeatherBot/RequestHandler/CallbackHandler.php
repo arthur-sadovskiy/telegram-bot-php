@@ -3,7 +3,9 @@
 namespace WeatherBot\RequestHandler;
 
 use Telegram\Bot\Objects\CallbackQuery;
-use WeatherBot\{Helper\WeatherClient, InlineKeyboardTrait, Response};
+use WeatherBot\{
+    Helper\WeatherClient, InlineKeyboardTrait, RedisHelper, Response
+};
 
 class CallbackHandler extends AbstractHandler
 {
@@ -28,7 +30,10 @@ class CallbackHandler extends AbstractHandler
         $weatherClient = (new WeatherClient())
             ->setParam(WeatherClient::CITY_KEY, $cityId)
             ->setParam(WeatherClient::APPID_KEY, $this->weatherApiToken)
-            ->setIsDetailedForecast($isDetailed);
+            ->setIsDetailedForecast($isDetailed)
+            ->setRedisHelper(
+                (new RedisHelper())->createRedisClient($this->getRedisClientConfig())
+            );
 
         $replyText = $weatherClient->fetch();
         $replyText .= PHP_EOL . PHP_EOL . 'To see menu again, type "/start"';

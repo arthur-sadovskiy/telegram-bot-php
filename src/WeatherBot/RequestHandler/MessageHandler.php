@@ -4,7 +4,9 @@ namespace WeatherBot\RequestHandler;
 
 use Elastica\Client as ElasticaClient;
 use Telegram\Bot\Objects\Location;
-use WeatherBot\{Elastic\Searcher, Helper\WeatherClient, InlineKeyboardTrait, Response};
+use WeatherBot\{
+    Elastic\Searcher, Helper\WeatherClient, InlineKeyboardTrait, RedisHelper, Response
+};
 
 class MessageHandler extends AbstractHandler
 {
@@ -70,7 +72,10 @@ class MessageHandler extends AbstractHandler
         if (!empty($foundData)) {
             $weatherClient = (new WeatherClient())
                 ->setParam(WeatherClient::CITY_KEY, $cityId)
-                ->setParam(WeatherClient::APPID_KEY, $this->weatherApiToken);
+                ->setParam(WeatherClient::APPID_KEY, $this->weatherApiToken)
+                ->setRedisHelper(
+                    (new RedisHelper())->createRedisClient($this->getRedisClientConfig())
+                );
 
             $replyText = $weatherClient->fetch();
             $replyText .= PHP_EOL . PHP_EOL;
@@ -107,7 +112,10 @@ class MessageHandler extends AbstractHandler
                 $cityId = $foundData[0]['id'];
                 $weatherClient = (new WeatherClient())
                     ->setParam(WeatherClient::CITY_KEY, $cityId)
-                    ->setParam(WeatherClient::APPID_KEY, $this->weatherApiToken);
+                    ->setParam(WeatherClient::APPID_KEY, $this->weatherApiToken)
+                    ->setRedisHelper(
+                        (new RedisHelper())->createRedisClient($this->getRedisClientConfig())
+                    );
 
                 $replyText = $weatherClient->fetch();
                 $replyText .= PHP_EOL . PHP_EOL . 'To see menu again, type "/start"';

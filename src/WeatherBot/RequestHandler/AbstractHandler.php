@@ -18,6 +18,11 @@ abstract class AbstractHandler
     protected $weatherApiToken;
 
     /**
+     * @var array
+     */
+    protected $redisClientConfig;
+
+    /**
      * AbstractHandler constructor.
      * @param Update $telegramUpdate
      */
@@ -32,6 +37,22 @@ abstract class AbstractHandler
     public function setWeatherApiToken(string $weatherApiToken)
     {
         $this->weatherApiToken = $weatherApiToken;
+    }
+
+    /**
+     * @param array $config
+     */
+    public function setRedisClientConfig(array $config)
+    {
+        $this->redisClientConfig = $config;
+    }
+
+    /**
+     * @return array
+     */
+    public function getRedisClientConfig(): array
+    {
+        return $this->redisClientConfig;
     }
 
     /**

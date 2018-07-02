@@ -22,6 +22,10 @@ if ($handler instanceof MessageHandler) {
 
     $handler->setElasticaClient($client);
 }
+$handler->setRedisClientConfig([
+    'host' => $config->get('redis_host'),
+    'port' => $config->get('redis_port')
+]);
 
 $response = $handler->handle();
 $telegram->sendMessage($response->getMessageParams());
