@@ -74,7 +74,9 @@ class MessageHandler extends AbstractHandler
 
             $replyText = $weatherClient->fetch();
             $replyText .= PHP_EOL . PHP_EOL;
-            $replyText .= 'Type "/start" to see menu or provide your location for immediate weather forecast';
+            $replyText .= 'To get the weather forecast for the same city use one of the buttons below.';
+            $replyText .= PHP_EOL;
+            $replyText .= 'Or provide a new city name / send another location!';
 
             $response->setMessageParam(Response::TEXT, $replyText)
                 ->setMessageParam(Response::REPLY_MARKUP, $this->getInlineKeyboardRepeat($cityId));
@@ -110,7 +112,10 @@ class MessageHandler extends AbstractHandler
                     ->setParam(WeatherClient::APPID_KEY, $this->weatherApiToken);
 
                 $replyText = $weatherClient->fetch();
-                $replyText .= PHP_EOL . PHP_EOL . 'To see menu again, type "/start"';
+                $replyText .= PHP_EOL . PHP_EOL;
+                $replyText .= 'To get the weather forecast for the same city use one of the buttons below.';
+                $replyText .= PHP_EOL;
+                $replyText .= 'Or provide a new city name / send another location!';
 
                 $response->setMessageParam(Response::TEXT, $replyText)
                     ->setMessageParam(Response::REPLY_MARKUP, $this->getInlineKeyboardRepeat($cityId));
