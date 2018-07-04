@@ -18,7 +18,7 @@ class RedisHelper
      */
     public function createRedisClient(array $config): RedisHelper
     {
-        if (!empty($config['host']) && !empty($config['port'])) {
+        if (!empty($config['host']) && !empty($config['port']) && \extension_loaded('redis')) {
             $client = new \Redis();
             $client->connect(
                 $config['host'],
