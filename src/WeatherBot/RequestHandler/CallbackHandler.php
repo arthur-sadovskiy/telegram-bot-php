@@ -36,7 +36,10 @@ class CallbackHandler extends AbstractHandler
             );
 
         $replyText = $weatherClient->fetch();
-        $replyText .= PHP_EOL . PHP_EOL . 'To see menu again, type "/start"';
+        $replyText .= PHP_EOL . PHP_EOL;
+        $replyText .= 'To get the weather forecast for the same city use one of the buttons below.';
+        $replyText .= PHP_EOL;
+        $replyText .= 'Or provide a new city name / send another location!';
 
         return (new Response())
             ->setMessageParam(Response::CHAT_ID, $chatId)

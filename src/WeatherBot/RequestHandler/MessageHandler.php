@@ -38,11 +38,15 @@ class MessageHandler extends AbstractHandler
         $this->chatId = $this->telegramUpdate->getMessage()->getChat()->getId();
         $providedText = $this->telegramUpdate->getMessage()->getText();
         $location = $this->telegramUpdate->getMessage()->getLocation();
+        $username = $this->telegramUpdate->getMessage()->getFrom()->getFirstName();
+        if (empty($username)) {
+            $username = $this->telegramUpdate->getMessage()->getFrom()->getUsername();
+        }
 
         if (null !== $location) {
             $response = $this->handleLocation($location);
         } elseif (null !== $providedText) {
-            $response = $this->handleText($providedText);
+            $response = $this->handleText($providedText, $username);
         } else {
             $response = (new Response())
                 ->setMessageParam(Response::CHAT_ID, $this->chatId)
@@ -79,7 +83,9 @@ class MessageHandler extends AbstractHandler
 
             $replyText = $weatherClient->fetch();
             $replyText .= PHP_EOL . PHP_EOL;
-            $replyText .= 'Type "/start" to see menu or provide your location for immediate weather forecast';
+            $replyText .= 'To get the weather forecast for the same city use one of the buttons below.';
+            $replyText .= PHP_EOL;
+            $replyText .= 'Or provide a new city name / send another location!';
 
             $response->setMessageParam(Response::TEXT, $replyText)
                 ->setMessageParam(Response::REPLY_MARKUP, $this->getInlineKeyboardRepeat($cityId));
@@ -93,15 +99,17 @@ class MessageHandler extends AbstractHandler
 
     /**
      * @param string $text
+     * @param string $username
      *
      * @return Response
      */
-    private function handleText(string $text): Response
+    private function handleText(string $text, string $username): Response
     {
         $response = (new Response())->setMessageParam(Response::CHAT_ID, $this->chatId);
 
         if ($text === '/start') {
-            $replyText = 'Provide city name, for which you would like to get weather forecast.' . PHP_EOL;
+            $replyText = "Hey, {$username}!" . PHP_EOL;
+            $replyText .= 'Provide city name, for which you would like to get weather forecast.' . PHP_EOL;
             $replyText .= 'Or just send your location!';
 
             $response->setMessageParam(Response::TEXT, $replyText);
@@ -118,7 +126,10 @@ class MessageHandler extends AbstractHandler
                     );
 
                 $replyText = $weatherClient->fetch();
-                $replyText .= PHP_EOL . PHP_EOL . 'To see menu again, type "/start"';
+                $replyText .= PHP_EOL . PHP_EOL;
+                $replyText .= 'To get the weather forecast for the same city use one of the buttons below.';
+                $replyText .= PHP_EOL;
+                $replyText .= 'Or provide a new city name / send another location!';
 
                 $response->setMessageParam(Response::TEXT, $replyText)
                     ->setMessageParam(Response::REPLY_MARKUP, $this->getInlineKeyboardRepeat($cityId));
