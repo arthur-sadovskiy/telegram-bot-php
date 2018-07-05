@@ -7,7 +7,6 @@ class Response
     public const CHAT_ID = 'chat_id';
     public const TEXT = 'text';
     public const REPLY_MARKUP = 'reply_markup';
-
     public const CALLBACK_QUERY_ID = 'callback_query_id';
 
     /**

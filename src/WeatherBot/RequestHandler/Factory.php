@@ -9,15 +9,18 @@ class Factory
     /**
      * @param Update $telegramUpdate
      *
-     * @return null|AbstractHandler
+     * @throws \UnexpectedValueException
+     *
+     * @return AbstractHandler
      */
-    public function getHandlerObject(Update $telegramUpdate): ?AbstractHandler
+    public function getHandlerObject(Update $telegramUpdate): AbstractHandler
     {
-        $handler = null;
         if ($telegramUpdate->isType('message')) {
             $handler = new MessageHandler($telegramUpdate);
         } elseif ($telegramUpdate->isType('callback_query')) {
             $handler = new CallbackHandler($telegramUpdate);
+        } else {
+            throw new \UnexpectedValueException('Unknown type of telegram update.');
         }
 
         return $handler;
