@@ -33,13 +33,11 @@ class MessageHandler extends AbstractHandler
      */
     public function handle(): Response
     {
-        $this->chatId = $this->telegramUpdate->getMessage()->getChat()->getId();
-        $providedText = $this->telegramUpdate->getMessage()->getText();
-        $location = $this->telegramUpdate->getMessage()->getLocation();
-        $username = $this->telegramUpdate->getMessage()->getFrom()->getFirstName();
-        if (empty($username)) {
-            $username = $this->telegramUpdate->getMessage()->getFrom()->getUsername();
-        }
+        $message = $this->telegramUpdate->getMessage();
+        $this->chatId = $message->getChat()->getId();
+        $providedText = $message->getText();
+        $location = $message->getLocation();
+        $username = $message->getFrom()->getFirstName() ?? $message->getFrom()->getUsername();
 
         if (null !== $location) {
             $response = $this->handleLocation($location);

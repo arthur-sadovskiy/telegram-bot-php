@@ -26,9 +26,6 @@ class Emoji
      */
     public function render(string $weatherDescription): string
     {
-        // echo json_decode('"\uD83D\uDE00"');
-        // echo "\u{1F30F}";
-
         return self::WEATHER_EMOJI[$weatherDescription] ?? '';
     }
 }
