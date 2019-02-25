@@ -7,6 +7,7 @@ use Telegram\Bot\Objects\Location;
 use WeatherBot\{
     Elastic\Searcher, Helper\WeatherClient, InlineKeyboardTrait, RedisHelper, Response
 };
+use Elastica\Exception\Connection\HttpException;
 
 class MessageHandler extends AbstractHandler
 {
@@ -112,7 +113,12 @@ class MessageHandler extends AbstractHandler
 
             $response->setMessageParam(Response::TEXT, $replyText);
         } elseif (\is_string($text)) {
-            $foundData = (new Searcher($this->elasticaClient))->searchByName($text);
+            try {
+                $foundData = (new Searcher($this->elasticaClient))->searchByName($text);
+            } catch (HttpException $e) {
+                $foundData = [];
+                $errorText = 'Whoops, an error has occurred (code #' . CURLE_COULDNT_CONNECT . ').';
+            }
 
             if (\count($foundData) === 1) {
                 $cityId = $foundData[0]['id'];
@@ -136,9 +142,11 @@ class MessageHandler extends AbstractHandler
 
                 $response->setMessageParam(Response::TEXT, $replyText)
                     ->setMessageParam(Response::REPLY_MARKUP, $this->getInlineKeyboardMultipleChoices($foundData));
-            } else {
+            } elseif (empty($foundData) && !isset($errorText)) {
                 $replyText = "We couldn't find your city :(";
                 $response->setMessageParam(Response::TEXT, $replyText);
+            } else {
+                $response->setMessageParam(Response::TEXT, $errorText);
             }
         }
 
