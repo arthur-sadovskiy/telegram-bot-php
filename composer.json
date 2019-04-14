@@ -4,5 +4,10 @@
         "guzzlehttp/guzzle": "~6.0",
         "ruflin/elastica": "dev-master",
         "elasticsearch/elasticsearch": "v6.0.0-beta1"
+    },
+    "autoload": {
+        "psr-4": {
+            "WeatherBot\\": "src/WeatherBot/"
+        }
     }
 }

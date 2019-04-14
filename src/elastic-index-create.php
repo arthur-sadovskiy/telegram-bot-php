@@ -3,7 +3,6 @@
 // and to create index for them in Elasticsearch
 
 require_once '../vendor/autoload.php';
-require_once 'bootstrap.php';
 
 use WeatherBot\Config;
 
